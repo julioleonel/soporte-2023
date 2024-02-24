@@ -73,7 +73,7 @@ public class UserController {
     }
 
     @PostMapping("/crearTicket")
-    public ResponseEntity<Ticket> crearTicket(@RequestBody TicketRecord ticketRecord, @RequestParam String nombreUsuario, @RequestParam Role rol) {
+    public ResponseEntity<String> crearTicket(@RequestBody TicketRecord ticketRecord, @RequestParam String nombreUsuario, @RequestParam Role rol) {
         User user = userRepository.findByUsername(nombreUsuario);
 
         if (user != null && user.getRole() == rol && rol == Role.USER) {
@@ -85,8 +85,11 @@ public class UserController {
             nuevoTicket.setDueDate(ticketRecord.dueDate());
             nuevoTicket.setCreatedBy(user);
 
-            Ticket ticketGuardado = ticketRepository.save(nuevoTicket);
-            return ResponseEntity.ok(ticketGuardado);
+            ticketRepository.save(nuevoTicket);
+
+            String response = "Ticket creado con éxito por el usuario " + nombreUsuario;
+
+            return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
