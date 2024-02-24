@@ -94,5 +94,24 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
+
+    @PostMapping("/asignarTicket")
+    public ResponseEntity<String> asignarTicket(@RequestParam Long ticketId, @RequestParam String nombreTecnico, @RequestParam Role rol) {
+        if (rol != Role.ADMIN) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Ticket ticket = ticketRepository.findById(ticketId).orElse(null);
+        User tecnico = userRepository.findByUsername(nombreTecnico);
+
+        if (ticket == null || tecnico == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        ticket.setAssignedTechnician(tecnico);
+        ticketRepository.save(ticket);
+
+        return ResponseEntity.ok("Ticket asignado con éxito al técnico " + nombreTecnico);
+    }
 }
 
