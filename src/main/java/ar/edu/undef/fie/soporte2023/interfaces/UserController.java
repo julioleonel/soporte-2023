@@ -1,9 +1,7 @@
 package ar.edu.undef.fie.soporte2023.interfaces;
 
-import ar.edu.undef.fie.soporte2023.domain.entities.Priority;
-import ar.edu.undef.fie.soporte2023.domain.entities.Role;
-import ar.edu.undef.fie.soporte2023.domain.entities.Ticket;
-import ar.edu.undef.fie.soporte2023.domain.entities.User;
+import ar.edu.undef.fie.soporte2023.domain.entities.*;
+import ar.edu.undef.fie.soporte2023.infrastructure.NotificationRepository;
 import ar.edu.undef.fie.soporte2023.infrastructure.TicketRepository;
 import ar.edu.undef.fie.soporte2023.infrastructure.UserRepository;
 import ar.edu.undef.fie.soporte2023.interfaces.request.TicketRecord;
@@ -25,10 +23,14 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final TicketRepository ticketRepository;
+    private final NotificationRepository notificationRepository;
 
-    public UserController(UserRepository userRepository, TicketRepository ticketRepository) {
+    public UserController(UserRepository userRepository, TicketRepository ticketRepository, NotificationRepository notificationRepository) {
         this.userRepository = userRepository;
         this.ticketRepository = ticketRepository;
+        this.notificationRepository = notificationRepository;
+
+
     }
 
     @PostMapping("/createUser")
@@ -111,7 +113,37 @@ public class UserController {
         ticket.setAssignedTechnician(tecnico);
         ticketRepository.save(ticket);
 
+        // Crear una notificación
+        Notification notification = new Notification();
+        notification.setMessage("Se te ha asignado un nuevo ticket: " + ticket.getId());
+        notification.setFecha(LocalDate.now());
+        notification.setTicket(ticket);
+        notification.setRecipient(tecnico);
+        notificationRepository.save(notification);
+
         return ResponseEntity.ok("Ticket asignado con éxito al técnico " + nombreTecnico);
+    }
+
+    @PostMapping("/cerrarTicket")
+    public ResponseEntity<String> cerrarTicket(@RequestParam Long ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId).orElse(null);
+
+        if (ticket == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        ticket.setDueDate(LocalDate.now());
+        ticketRepository.save(ticket);
+
+        // Crear una notificación
+        Notification notification = new Notification();
+        notification.setMessage("Tu ticket " + ticket.getId() + " ha sido cerrado.");
+        notification.setFecha(LocalDate.now());
+        notification.setTicket(ticket);
+        notification.setRecipient(ticket.getCreatedBy());
+        notificationRepository.save(notification);
+
+        return ResponseEntity.ok("Ticket " + ticketId + " cerrado con éxito");
     }
 }
 
